@@ -64,6 +64,26 @@ export default function Settings() {
   const [editingSection, setEditingSection] = useState(null);
   const navigate = useNavigate();
 
+  const [userProfile, setUserProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  React.useEffect(() => {
+    if (!currentUser) return;
+    const fetchProfile = async () => {
+      try {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../config/firebase');
+        const snap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (snap.exists()) setUserProfile(snap.data());
+      } catch (e) {
+        console.error("Error fetching profile:", e);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    fetchProfile();
+  }, [currentUser]);
+
   const handleLogout = async () => {
     try { await logout(); navigate('/login'); } catch (e) { console.error(e); }
   };
@@ -141,30 +161,13 @@ export default function Settings() {
             <div className="max-w-3xl space-y-10">
 
               {/* ── PROFILE TAB ── */}
-              {activeTab === 'profile' && (() => {
-                const [userProfile, setUserProfile] = React.useState(null);
-                const [loadingProfile, setLoadingProfile] = React.useState(true);
-
-                React.useEffect(() => {
-                  if (!currentUser) return;
-                  const fetchProfile = async () => {
-                    try {
-                      const { doc, getDoc } = await import('firebase/firestore');
-                      const { db } = await import('../config/firebase');
-                      const snap = await getDoc(doc(db, 'users', currentUser.uid));
-                      if (snap.exists()) setUserProfile(snap.data());
-                    } catch (e) {
-                      console.error("Error fetching profile:", e);
-                    } finally {
-                      setLoadingProfile(false);
-                    }
-                  };
-                  fetchProfile();
-                }, [currentUser]);
-
-                if (loadingProfile) return <div className="animate-pulse space-y-4 pt-10"><div className="h-20 bg-surface-container rounded-xl"/><div className="h-40 bg-surface-container rounded-xl"/></div>;
-
-                return (
+              {activeTab === 'profile' && (
+                loadingProfile ? (
+                  <div className="animate-pulse space-y-4 pt-10">
+                    <div className="h-20 bg-surface-container rounded-xl"/>
+                    <div className="h-40 bg-surface-container rounded-xl"/>
+                  </div>
+                ) : (
                   <div>
                     <div className="mb-8">
                       <h1 className="text-2xl font-extrabold tracking-tight font-headline text-on-surface mb-1">My Profile</h1>
@@ -220,8 +223,8 @@ export default function Settings() {
                       </button>
                     </div>
                   </div>
-                );
-              })()}
+                )
+              )}
 
               {/* ── CONFIG TAB ── */}
               {activeTab === 'config' && (
