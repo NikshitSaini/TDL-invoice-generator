@@ -48,7 +48,7 @@ export default function CreateInvoice() {
   const [gstEnabled, setGstEnabled]     = useState(true);
   const [items, setItems]               = useState([EMPTY_ITEM()]);
   const [saving, setSaving]             = useState(false);
-  const [status, setStatus]             = useState('Created'); // Default status
+  const [status, setStatus]             = useState('Pending'); // Default status
   const [showAddClientModal, setShowAddClientModal] = useState(false);
 
   // Fetch clients from Firestore
@@ -98,7 +98,7 @@ export default function CreateInvoice() {
   async function handleSubmit(e, saveAsDraft = false) {
     e?.preventDefault();
 
-    const finalStatus = saveAsDraft ? 'draft' : status;
+    const finalStatus = saveAsDraft ? 'Draft' : status;
 
     // Validation
     if (!selectedClient) { toast.error('Please select a client'); return; }
@@ -411,7 +411,7 @@ export default function CreateInvoice() {
               <div className="mt-5 pt-4 border-t border-outline-variant/15">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-2">Status</label>
                 <div className="flex gap-2">
-                  {['pending', 'draft'].map(s => (
+                  {['Pending', 'Draft'].map(s => (
                     <button
                       key={s}
                       type="button"
@@ -452,12 +452,18 @@ export default function CreateInvoice() {
 
             {/* Company Info */}
             <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5 space-y-2">
-              <img src={LOGO} alt="Teraforge Digital Lab" className="h-6 w-auto" onError={e => e.target.style.display = 'none'} />
-              <p className="text-xs font-bold text-on-surface">Teraforge Digital Lab</p>
+              <img 
+                src={currentConfig?.logoUrl || LOGO} 
+                alt={currentConfig?.companyName || "Teraforge Digital Lab"} 
+                className="h-6 w-auto" 
+                onError={e => { e.target.src = LOGO; }} 
+              />
+              <p className="text-xs font-bold text-on-surface">{currentConfig?.companyName || "Teraforge Digital Lab"}</p>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                End-to-end solutions from MVP development &amp; AI to web &amp; app — your single partner from ideation to launch.
+                {currentConfig?.address || "End-to-end solutions from MVP development & AI to web & app — your single partner from ideation to launch."}
               </p>
             </div>
+
           </div>
         </form>
       </main>

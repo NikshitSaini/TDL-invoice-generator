@@ -59,7 +59,7 @@ function ConfigCard({ icon, title, description, action, onClick, children }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Settings() {
   const { currentUser, logout } = useAuth();
-  const { config, loadingConfig } = useConfig();
+  const { config, loadingConfig, refreshConfig, error } = useConfig();
   const [activeTab, setActiveTab] = useState('config');
   const [editingSection, setEditingSection] = useState(null);
   const navigate = useNavigate();
@@ -241,10 +241,24 @@ export default function Settings() {
                   <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden mb-8">
                     <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-emerald-600 text-base">cloud_done</span>
-                        <p className="text-sm font-bold text-on-surface">Current Configuration (Live from Firebase)</p>
+                        <span className={`material-symbols-outlined text-base ${error ? 'text-error' : 'text-emerald-600'}`}>
+                          {error ? 'error' : 'cloud_done'}
+                        </span>
+                        <p className="text-sm font-bold text-on-surface">
+                          {error ? 'Sync Error' : 'Current Configuration (Live from Firebase)'}
+                        </p>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Synced</span>
+                      <div className="flex items-center gap-2">
+                        {error && <span className="text-[10px] text-error font-medium">{error}</span>}
+                        <button 
+                          onClick={refreshConfig}
+                          disabled={loadingConfig}
+                          className="flex items-center gap-1 text-xs font-bold text-[#6C47FF] hover:bg-primary-container/10 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                        >
+                          <span className={`material-symbols-outlined text-sm ${loadingConfig ? 'animate-spin' : ''}`}>refresh</span>
+                          REFRESH
+                        </button>
+                      </div>
                     </div>
                     <div className="divide-y divide-outline-variant/10">
                       <InfoRow label="Company Name" value={config?.companyName || '—'} />
@@ -257,6 +271,7 @@ export default function Settings() {
                       <InfoRow label="QR Code URL"  value={config?.qrCodeUrl || '—'} />
                     </div>
                   </div>
+
 
                   {/* Edit cards grid */}
                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Edit Sections</p>

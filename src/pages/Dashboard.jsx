@@ -6,29 +6,33 @@ import { useAuth } from '../contexts/AuthContext';
 import AppLayout from '../components/AppLayout';
 import OnboardingModal from '../components/OnboardingModal';
 
+import { useConfig } from '../contexts/ConfigContext';
+
 function formatINR(amount) {
   return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function statusColor(s) {
-  if (s === 'Paid' || s === 'Payment Received') return 'text-emerald-700 bg-emerald-50';
-  if (s === 'Approved') return 'text-blue-600 bg-blue-50';
-  if (s === 'Sent') return 'text-purple-600 bg-purple-50';
-  if (s === 'Under Discussion') return 'text-yellow-600 bg-yellow-50';
-  if (s === 'Ignored') return 'text-orange-600 bg-orange-50';
-  if (s === 'Rejected' || s === 'Lost Cause') return 'text-red-700 bg-red-50';
-  if (s === 'Draft') return 'text-slate-500 bg-slate-100';
+  const status = s?.toLowerCase();
+  if (status === 'paid' || status === 'payment received') return 'text-emerald-700 bg-emerald-50';
+  if (status === 'approved') return 'text-blue-600 bg-blue-50';
+  if (status === 'sent') return 'text-purple-600 bg-purple-50';
+  if (status === 'under discussion') return 'text-yellow-600 bg-yellow-50';
+  if (status === 'ignored') return 'text-orange-600 bg-orange-50';
+  if (status === 'rejected' || status === 'lost cause') return 'text-red-700 bg-red-50';
+  if (status === 'draft') return 'text-slate-500 bg-slate-100';
   return 'text-primary bg-primary-fixed/30';
 }
 
 function statusDot(s) {
-  if (s === 'Paid' || s === 'Payment Received') return 'bg-emerald-600';
-  if (s === 'Approved') return 'bg-blue-400';
-  if (s === 'Sent') return 'bg-purple-400';
-  if (s === 'Under Discussion') return 'bg-yellow-400';
-  if (s === 'Ignored') return 'bg-orange-400';
-  if (s === 'Rejected' || s === 'Lost Cause') return 'bg-red-500';
-  if (s === 'Draft') return 'bg-slate-300';
+  const status = s?.toLowerCase();
+  if (status === 'paid' || status === 'payment received') return 'bg-emerald-600';
+  if (status === 'approved') return 'bg-blue-400';
+  if (status === 'sent') return 'bg-purple-400';
+  if (status === 'under discussion') return 'bg-yellow-400';
+  if (status === 'ignored') return 'bg-orange-400';
+  if (status === 'rejected' || status === 'lost cause') return 'bg-red-500';
+  if (status === 'draft') return 'bg-slate-300';
   return 'bg-primary';
 }
 
@@ -36,8 +40,11 @@ const Skeleton = () => (
   <div className="animate-pulse h-6 bg-surface-container rounded-lg w-24" />
 );
 
+const LOGO = 'https://teraforgedigitallab.com/images/logo.svg';
+
 export default function Dashboard() {
   const { currentUser } = useAuth();
+  const { config } = useConfig();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const showOnboarding = searchParams.get('onboarding') === 'true';
@@ -59,12 +66,25 @@ export default function Dashboard() {
         let paid = 0, outstanding = 0, overdue = 0;
         invoices.forEach(inv => {
           const amount = Number(inv.grandTotal || inv.total || 0);
-          if (inv.status === 'paid') paid += amount;
-          else if (inv.status === 'overdue') overdue += amount;
-          else outstanding += amount;
+          const status = inv.status?.toLowerCase() || '';
+          
+          if (status === 'paid' || status === 'payment received') {
+            paid += amount;
+          } else if (status === 'overdue') {
+            overdue += amount;
+          } else if (status !== 'rejected' && status !== 'lost cause' && status !== 'draft') {
+            outstanding += amount;
+          }
         });
 
-        setStats({ totalRevenue: paid + outstanding + overdue, paid, outstanding, overdue, totalClients: clients.length, totalInvoices: invoices.length });
+        setStats({ 
+          totalRevenue: paid + outstanding + overdue, 
+          paid, 
+          outstanding, 
+          overdue, 
+          totalClients: clients.length, 
+          totalInvoices: invoices.length 
+        });
 
         const sorted = [...invoices].sort((a, b) => {
           const da = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
@@ -239,10 +259,15 @@ export default function Dashboard() {
 
             {/* Company Info */}
             <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm p-5 space-y-3">
-              <img src="https://teraforgedigitallab.com/images/logo.svg" alt="Teraforge Digital Lab" className="h-7 w-auto" onError={e => { e.target.style.display = 'none'; }} />
-              <p className="text-sm font-bold text-on-surface">Teraforge Digital Lab</p>
+              <img 
+                src={config?.logoUrl || LOGO} 
+                alt={config?.companyName || "Teraforge Digital Lab"} 
+                className="h-7 w-auto" 
+                onError={e => { e.target.src = LOGO; }} 
+              />
+              <p className="text-sm font-bold text-on-surface">{config?.companyName || "Teraforge Digital Lab"}</p>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                Building the next generation of tech startups — end-to-end software solutions from ideation to launch.
+                {config?.address ? config.address : "Building the next generation of tech startups — end-to-end software solutions from ideation to launch."}
               </p>
               <Link to="/settings" className="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
                 <span className="material-symbols-outlined text-sm">settings</span> Company Settings
@@ -254,3 +279,4 @@ export default function Dashboard() {
     </AppLayout>
   );
 }
+

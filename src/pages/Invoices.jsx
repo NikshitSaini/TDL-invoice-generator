@@ -244,13 +244,14 @@ export default function Invoices() {
       
       const isThisMonth = invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
 
-      if (s === 'paid') {
+      if (s === 'paid' || s === 'payment received') {
         if (isThisMonth) paid += amt;
       }
       else if (s === 'overdue') overdue += amt;
       else if (s === 'draft') drafts++;
-      else if (s !== 'rejected' && s !== 'lost cause') outstanding += amt;
+      else if (!['rejected', 'lost cause'].includes(s)) outstanding += amt;
     });
+
     return { paid, outstanding, overdue, drafts };
   }, [invoices]);
 
